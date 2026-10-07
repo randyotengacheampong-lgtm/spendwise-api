@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import engine, get_db, Base
 import models
@@ -9,6 +10,12 @@ from datetime import datetime
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="SpendWise API - Fintech")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Schemas
 class ExpenseCreate(BaseModel):
