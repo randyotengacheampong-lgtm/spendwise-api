@@ -11,7 +11,7 @@ from datetime import timedelta
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(
+app = FastAPI()
     title="SpendWise API - Fintech Grade",
     description="JWT Secured Expense & Income Tracker - Ghana",
     version="2.0.0",
