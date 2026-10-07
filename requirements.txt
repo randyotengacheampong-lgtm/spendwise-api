@@ -1,6 +1,7 @@
-fastapi
-uvicorn
-SQLAlchemy
-python-jose[cryptography]
-bcrypt
-python-multipart
+fastapi==0.110.0
+uvicorn==0.27.1
+SQLAlchemy==2.0.27
+python-jose[cryptography]==3.3.0
+bcrypt==4.0.1
+python-multipart==0.0.6
+python-dotenv==1.0.0
