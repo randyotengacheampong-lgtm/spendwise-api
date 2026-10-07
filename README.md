@@ -18,3 +18,5 @@ uvicorn main:app --reload --port 8001
 Open: http://127.0.0.1:8001/docs
 
 Built by Kofi 🇬🇭 
+
+🚀 Live Demo: https://spendwise-api-q6b6.onrender.com/docs
