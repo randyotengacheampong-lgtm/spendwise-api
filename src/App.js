@@ -35,6 +35,7 @@ const styles = `
 .login-box { background: white; padding: 32px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 380px; }
 .login-box input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; }
 .login-box button { width: 100%; background: #2563eb; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.link { background: none; border: none; color: #2563eb; cursor: pointer; width: 100%; margin-top: 12px; text-align: center; font-size: 14px; }
 .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 .toolbar input,.toolbar select { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; }
 .budget-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
@@ -46,6 +47,10 @@ const styles = `
   @media (max-width: 800px) {.cards { grid-template-columns: 1fr; }.form-row,.grid-2,.budget-grid { grid-template-columns: 1fr; } }
 `;
 
+const EXPENSE_CATEGORIES = ["Food", "Transport", "Data", "Mo", "Other"];
+const INCOME_CATEGORIES = ["Salary", "Business", "Gift", "Other"];
+const PAYMENT_METHODS = ["MTN MoMo", "Vodafone Cash", "AirtelTigo", "Cash", "Card"];
+
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [user, setUser] = useState(null);
@@ -54,14 +59,16 @@ export default function App() {
   const [incomes, setIncomes] = useState([]);
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Food");
+  const [paymentMethod, setPaymentMethod] = useState("MTN MoMo");
   const [incomeAmount, setIncomeAmount] = useState("");
   const [incomeCategory, setIncomeCategory] = useState("Salary");
-  const [username, setUsername] = useState("kofi");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isSignup, setIsSignup] = useState(false);
 
   const [filterCategory, setFilterCategory] = useState("All");
   const [search, setSearch] = useState("");
-  const [budgets, setBudgets] = useState({ Food: 5000, Transport: 2000, Data: 5000, Other: 5000 });
+  const [budgets, setBudgets] = useState({ Food: 5000, Transport: 2000, Data: 5000, MoMo: 2000, Other: 5000 });
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -73,6 +80,17 @@ export default function App() {
     const res = await axios.post(`${API}/login`, form);
     localStorage.setItem("token", res.data.access_token);
     setToken(res.data.access_token);
+  };
+
+  const signup = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/register`, { username, password });
+      alert("Account created! Now login.");
+      setIsSignup(false);
+    } catch (err) {
+      alert("Signup failed: " + JSON.stringify(err.response?.data));
+    }
   };
 
   const logout = () => { localStorage.removeItem("token"); setToken(""); };
@@ -96,7 +114,7 @@ export default function App() {
 
   const addExpense = async () => {
     if (!amount) return;
-    await axios.post(`${API}/expenses/`, { amount: parseFloat(amount), category, title: category, description: "Expense" }, { headers });
+    await axios.post(`${API}/expenses/`, { amount: parseFloat(amount), category, title: category, description: paymentMethod, payment_method: paymentMethod }, { headers });
     setAmount(""); fetchData();
   };
 
@@ -112,10 +130,10 @@ export default function App() {
   const editExpense = async (exp) => {
     const newAmount = prompt("New amount:", exp.amount);
     if (!newAmount) return;
-    const newCat = prompt("New category (Food, Transport, Data, Other):", exp.category);
+    const newCat = prompt("New category (Food, Transport, Data, MoMo, Other):", exp.category);
     if (!newCat) return;
     try {
-      await axios.put(`${API}/expenses/${exp.id}/`, { amount: parseFloat(newAmount), category: newCat, title: newCat, description: "Expense" }, { headers });
+      await axios.put(`${API}/expenses/${exp.id}/`, { amount: parseFloat(newAmount), category: newCat, title: newCat, description: paymentMethod }, { headers });
       fetchData();
     } catch (err) {
       alert("Edit failed: " + JSON.stringify(err.response?.data));
@@ -134,9 +152,9 @@ export default function App() {
   };
 
   const exportCSV = () => {
-    let csv = "Type,Category,Amount\n";
-    expenses.forEach(e => csv += `Expense,${e.category},${e.amount}\n`);
-    incomes.forEach(i => csv += `Income,${i.category || i.title},${i.amount}\n`);
+    let csv = "Type,Category,Amount,PaymentMethod\n";
+    expenses.forEach(e => csv += `Expense,${e.category},${e.amount},${e.description || ""}\n`);
+    incomes.forEach(i => csv += `Income,${i.category || i.title},${i.amount},\n`);
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -148,11 +166,15 @@ export default function App() {
   if (!token) return (
     <div className="login-wrap">
       <style>{styles}</style>
-      <form onSubmit={login} className="login-box">
+      <form onSubmit={isSignup? signup : login} className="login-box">
         <h1 style={{ textAlign: "center", marginTop: 0 }}>SpendWise 🇬🇭</h1>
+        <p style={{ textAlign: "center", color: "#64748b", fontSize: 14, marginTop: -10 }}>Ghana Fintech: Track Income and Expense in GHS ₵ with MoMo</p>
         <input placeholder="username" value={username} onChange={e => setUsername(e.target.value)} />
         <input type="password" placeholder="password" value={password} onChange={e => setPassword(e.target.value)} />
-        <button type="submit">Login</button>
+        <button type="submit">{isSignup? "Create Account" : "Login"}</button>
+        <button type="button" className="link" onClick={() => setIsSignup(!isSignup)}>
+          {isSignup? "Already have an account? Login" : "No account? Create Account"}
+        </button>
       </form>
     </div>
   );
@@ -162,7 +184,7 @@ export default function App() {
     if (f) f.value += cur.amount; else acc.push({ name: cur.category, value: cur.amount });
     return acc;
   }, []);
-  const COLORS = ["#f97316", "#22c55e", "#0ea5e9", "#ef4444", "#a855f7"];
+  const COLORS = ["#f97316", "#22c55e", "#0ea5e9", "#ef4444", "#a855f7", "#eab308"];
 
   const filteredExpenses = expenses.filter(e =>
     (filterCategory === "All" || e.category === filterCategory) &&
@@ -199,7 +221,10 @@ export default function App() {
             <div className="input-group">
               <input type="number" placeholder="Amount" value={amount} onChange={e => setAmount(e.target.value)} />
               <select value={category} onChange={e => setCategory(e.target.value)}>
-                <option>Food</option><option>Transport</option><option>Data</option><option>Other</option>
+                {EXPENSE_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+              </select>
+              <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                {PAYMENT_METHODS.map(m => <option key={m}>{m}</option>)}
               </select>
               <button onClick={addExpense} className="btn btn-black">Add</button>
             </div>
@@ -209,7 +234,7 @@ export default function App() {
             <div className="input-group">
               <input type="number" placeholder="Amount" value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} />
               <select value={incomeCategory} onChange={e => setIncomeCategory(e.target.value)}>
-                <option>Salary</option><option>Business</option><option>Gift</option><option>Other</option>
+                {INCOME_CATEGORIES.map(c => <option key={c}>{c}</option>)}
               </select>
               <button onClick={addIncome} className="btn btn-green">Add</button>
             </div>
@@ -233,7 +258,7 @@ export default function App() {
         <div className="toolbar">
           <input placeholder="Search category..." value={search} onChange={e => setSearch(e.target.value)} />
           <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
-            <option>All</option><option>Food</option><option>Transport</option><option>Data</option><option>Other</option>
+            <option>All</option>{EXPENSE_CATEGORIES.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
 
@@ -256,7 +281,7 @@ export default function App() {
             <h3>Expenses ({filteredExpenses.length})</h3>
             {filteredExpenses.map(exp => (
               <div key={exp.id} className="list-item list-expense">
-                <span>{exp.category} - GHS ₵ {exp.amount}</span>
+                <span>{exp.category} - GHS ₵ {exp.amount} {exp.description? `(${exp.description})` : ""}</span>
                 <span>
                   <button onClick={() => editExpense(exp)} className="edit">Edit</button>
                   <button onClick={() => deleteExpense(exp.id)} className="delete">Delete</button>
