@@ -11,7 +11,7 @@ from datetime import timedelta
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(
     title="SpendWise API - Fintech Grade",
     description="JWT Secured Expense & Income Tracker - Ghana",
     version="2.0.0",
@@ -89,7 +89,6 @@ def me(current_user: models.User = Depends(get_current_user)):
 @app.post("/expenses/")
 def create_expense(expense: ExpenseCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     data = expense.model_dump()
-    # if your Expense model has user_id, it will use it - if not, it still works
     if hasattr(models.Expense, 'user_id'):
         data['user_id'] = current_user.id
     new_expense = models.Expense(**data)
